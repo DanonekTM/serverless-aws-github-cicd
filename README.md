@@ -12,6 +12,14 @@ This setup provides a highly **cost-effective** and **scalable** full-stack appl
 
 ---
 
+### 📷 Architecture Overview
+
+Here's a visual overview of the architecture the pipeline will deploy:
+
+![Architecture](infrastructure-architecture-cicd.png)
+
+---
+
 ### 🔧 Prerequisites
 
 Before you start, make sure you have:
@@ -47,7 +55,7 @@ Follow these simple steps to deploy your serverless infrastructure:
 5. **Push Your Code**  
    Push the code to your repository, and watch the pipeline work!
 
-A step by step tutorial available <a href="https://">here</a>.
+A step by step tutorial available [here](https://portfolio.danonek.dev/blog/running_serverless_workloads_on_aws_using_github_actions).
 
 ---
 
@@ -63,4 +71,4 @@ Congratulations! You’ve successfully deployed a **full-stack, serverless** app
 
 ---
 
-Enjoy building on AWS serverless!
+Enjoy building on AWS!
