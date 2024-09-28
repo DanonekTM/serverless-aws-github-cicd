@@ -1,0 +1,132 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+	  {
+		"Sid": "S3BucketPermissions",
+		"Effect": "Allow",
+		"Action": [
+		  "s3:CreateBucket",
+		  "s3:PutBucketPolicy",
+		  "s3:GetBucketPolicy",
+		  "s3:GetBucketAcl",
+		  "s3:GetBucketCORS",
+		  "s3:GetBucketWebsite",
+		  "s3:GetBucketTagging",
+		  "s3:GetAccelerateConfiguration",
+		  "s3:GetBucketRequestPayment",
+		  "s3:GetBucketVersioning",
+		  "s3:GetEncryptionConfiguration",
+		  "s3:GetReplicationConfiguration",
+		  "s3:GetBucketObjectLockConfiguration",
+		  "s3:GetBucketPublicAccessBlock",
+		  "s3:GetBucketLogging",
+		  "s3:GetLifecycleConfiguration",
+		  "s3:GetObject",
+		  "s3:PutBucketPublicAccessBlock",
+		  "s3:PutEncryptionConfiguration",
+		  "s3:DeleteBucket",
+		  "s3:DeleteBucketPolicy",
+		  "s3:DeleteObjectVersion",
+		  "s3:PutObject",
+		  "s3:PutBucketTagging",
+		  "s3:DeleteObject",
+		  "s3:ListBucket",
+		  "s3:ListBucketVersions"
+		],
+		"Resource": [
+		  "arn:aws:s3:::cicd-pipeline-frontend-*",
+		  "arn:aws:s3:::cicd-pipeline-frontend-*/*",
+		  "arn:aws:s3:::<TERRAFORM_S3_BUCKET>",
+		  "arn:aws:s3:::<TERRAFORM_S3_BUCKET>/*"
+		]
+	  },
+	  {
+		"Sid": "CloudFrontPermissions",
+		"Effect": "Allow",
+		"Action": [
+		  "cloudfront:CreateDistribution",
+		  "cloudfront:UpdateDistribution",
+		  "cloudfront:DeleteDistribution",
+		  "cloudfront:GetDistribution",
+		  "cloudfront:GetDistributionConfig",
+		  "cloudfront:TagResource",
+		  "cloudfront:UntagResource",
+		  "cloudfront:CreateCloudFrontOriginAccessIdentity",
+		  "cloudfront:GetCloudFrontOriginAccessIdentity",
+		  "cloudfront:DeleteCloudFrontOriginAccessIdentity",
+		  "cloudfront:ListTagsForResource"
+		],
+		"Resource": "*"
+	  },
+	  {
+		"Sid": "LambdaFunctionPermissions",
+		"Effect": "Allow",
+		"Action": [
+		  "lambda:CreateFunction",
+		  "lambda:UpdateFunctionCode",
+		  "lambda:UpdateFunctionConfiguration",
+		  "lambda:DeleteFunction",
+		  "lambda:AddPermission",
+		  "lambda:RemovePermission",
+		  "lambda:GetFunction",
+		  "lambda:InvokeFunction",
+		  "lambda:TagResource",
+		  "lambda:ListVersionsByFunction",
+		  "lambda:GetFunctionCodeSigningConfig",
+		  "lambda:GetPolicy"
+		],
+		"Resource": "arn:aws:lambda:<AWS_REGION>:*:function:backend_lambda_function"
+	  },
+	  {
+		"Sid": "IAMRolePermissions",
+		"Effect": "Allow",
+		"Action": [
+		  "iam:CreateRole",
+		  "iam:DeleteRole",
+		  "iam:AttachRolePolicy",
+		  "iam:DetachRolePolicy",
+		  "iam:PassRole",
+		  "iam:TagRole",
+		  "iam:GetRole",
+		  "iam:ListRolePolicies",
+		  "iam:ListAttachedRolePolicies",
+		  "iam:ListInstanceProfilesForRole"
+		],
+		"Resource": ["arn:aws:iam::*:role/lambda_exec_role"]
+	  },
+	  {
+		"Sid": "APIGatewayPermissions",
+		"Effect": "Allow",
+		"Action": [
+		  "apigateway:POST",
+		  "apigateway:DELETE",
+		  "apigateway:GET",
+		  "apigateway:PATCH",
+		  "apigateway:PUT"
+		],
+		"Resource": ["*"]
+	  },
+	  {
+		"Sid": "CloudWatchLogsPermissions",
+		"Effect": "Allow",
+		"Action": [
+		  "logs:CreateLogGroup",
+		  "logs:CreateLogStream",
+		  "logs:PutLogEvents",
+		  "logs:DescribeLogGroups",
+		  "logs:DescribeLogStreams"
+		],
+		"Resource": ["arn:aws:logs:<AWS_REGION>:*:log-group:/aws/lambda/*"]
+	  },
+	  {
+		"Sid": "GeneralEC2ActionsForVPC",
+		"Effect": "Allow",
+		"Action": [
+		  "ec2:DescribeVpcs",
+		  "ec2:DescribeSubnets",
+		  "ec2:DescribeSecurityGroups"
+		],
+		"Resource": "*"
+	  }
+	]
+  }

@@ -1,0 +1,142 @@
+name: Build, Deploy, and Manage Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Manual trigger for Terraform destroy
+
+jobs:
+  build_and_apply:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' # This ensures it only runs on push events
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 1: Set up Java and Build Backend Lambda
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "adopt"
+
+      - name: Build Backend Lambda
+        run: |
+          cd lambda
+          gradle clean build    # Use Gradle wrapper to build Java project
+          mkdir -p ../builds/backend-files
+          mv build/libs/*.jar ../builds/backend-files/lambda.jar
+
+      # Step 2: Set up Terraform and S3 backend
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.1
+          terraform_wrapper: false
+
+      - name: Terraform Init with S3 Backend
+        working-directory: ./infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TERRAFORM_S3_BUCKET }}" \
+            -backend-config="key=terraform/state" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="access_key=${{ secrets.AWS_ACCESS_KEY }}" \
+            -backend-config="secret_key=${{ secrets.AWS_SECRET_KEY }}"
+
+      # Step 3: Terraform Apply (Deploy S3, CloudFront, Lambda, API Gateway)
+      - name: Terraform Apply
+        working-directory: ./infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        run: terraform apply -auto-approve
+
+      # Step 4: Get API Gateway URL from Terraform Output
+      - name: Get API Gateway URL
+        id: get_api_url
+        working-directory: ./infra
+        run: echo "API_URL=$(terraform output -raw api_gateway_url)" >> $GITHUB_ENV
+
+      # Step 5: Get S3 Bucket Name from Terraform Output
+      - name: Get S3 Bucket Name
+        working-directory: ./infra
+        run: |
+          S3_BUCKET_NAME=$(terraform output --raw s3_bucket_name)
+          echo "S3_BUCKET_NAME is: $S3_BUCKET_NAME"
+          echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> $GITHUB_ENV
+
+      # Step 6: Set up Node.js and Build Frontend (Single Step)
+      - name: Set up Node.js and Build Frontend with Backend URL
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Changing URL for API GATEWAY
+      - name: Update Frontend with API URL and Build
+        run: |
+          echo "Populating API Gateway URL in Frontend"
+          cd frontend
+          sed -i "s|<API_URL_PLACEHOLDER>|${{ env.API_URL }}/hello|g" src/components/Hello.vue
+          npm install
+          npm run build
+          mkdir -p ../builds/frontend-files
+          mv dist/* ../builds/frontend-files/
+
+      # Step 7: Upload Frontend to S3 Bucket
+      - name: Upload Frontend to S3
+        run: |
+          cd builds && aws s3 sync frontend-files s3://${{ env.S3_BUCKET_NAME }} --delete
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      # Optional: List Artifacts (for debugging purposes)
+      - name: List Artifacts
+        run: |
+          cd builds
+          echo "Frontend files moved:"
+          ls frontend-files
+          echo "Backend files moved:"
+          ls backend-files
+
+  terraform_destroy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' # This ensures it runs only triggered manually
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.1
+
+      # Initialize Terraform with S3 Backend
+      - name: Terraform Init with S3 Backend
+        working-directory: ./infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TERRAFORM_S3_BUCKET }}" \
+            -backend-config="key=terraform/state" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="access_key=${{ secrets.AWS_ACCESS_KEY }}" \
+            -backend-config="secret_key=${{ secrets.AWS_SECRET_KEY }}"
+
+      # Destroy resources manually
+      - name: Terraform Destroy
+        working-directory: ./infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        run: terraform destroy -auto-approve

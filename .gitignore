@@ -1,0 +1,21 @@
+.vscode/
+
+# Ignore node_modules directory in /frontend
+./frontend/node_modules
+
+
+# Ignore .gradle directory in /lambda
+/lambda/.gradle/
+
+# Ignore build directory in /lambda
+/lambda/build/
+
+/builds/
+
+# Ignore Terraform files
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.*
